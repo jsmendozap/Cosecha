@@ -37,7 +37,7 @@ shinyServer(function(input, output) {
     req(input$file)
     
     read_excel(input$file$datapath) %>%
-      select(1,3) %>%
+      select(1, 3, 4) %>%
       rename(Equipo = 1, Pendiente = 2)
   })
   
@@ -45,7 +45,7 @@ shinyServer(function(input, output) {
   ## Mostrando tabla de equipos
   
   output$equipos <- renderDataTable(expr = equipos(),
-                                    options = list(pageLength = 3, searching = F))
+                                    options = list(searching = F))
   
   
   ## Seleccionando lote

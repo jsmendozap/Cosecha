@@ -16,20 +16,21 @@ shinyUI(fluidPage(
       tabPanel(title = 'Información',
         div('', class = "p-2"),
         sidebarLayout(
-            sidebarPanel(
+            sidebarPanel(width = 3,
               fileInput(inputId = 'shape', label = 'Shape de plantación:'),
               fileInput(inputId = 'file', label = 'Equipos disponibles:'),
               div('', class = 'p-2'),
-              dataTableOutput('equipos'),
               reactOutput('informacion')
             ),
     
-            mainPanel(
-              div(leafletOutput(outputId = 'mapa', height = 500), 
-                  class = "border-2 border-gray-400 rounded-md"
-              )
+            mainPanel(width = 9,
+                      fluidRow(
+                        column(5, leafletOutput(outputId = 'mapa', height = 500),
+                               class = "border-2 border-gray-400 rounded-md"),
+                        column(7, dataTableOutput('equipos'))
+                      )
             )
-          )
+        )
       ),
       tabPanel(title = 'Cosecha por lotes',
                div('', class = "p-2"),

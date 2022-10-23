@@ -1,14 +1,16 @@
-pacman::p_load(tidyverse, readxl, leaflet, leaflet.extras, shiny, sf, osmdata, stars, magrittr, whitebox, units)
+pacman::p_load(tidyverse, readxl, leaflet, leaflet.extras, shiny, sf,
+               osmdata, magrittr, terra, units, geodata, elevatr, stars)
 
 shinyServer(function(input, output) {
   
   ## Cargando shape de cosecha
+  
   data <- reactive({
     req(input$shape)
     
     ext <- tools::file_ext(input$shape$name)
     data <- switch(ext,
-      geojson = st_read(input$shape$datapath),
+      geojson = st_read(input$shape$datapath, quiet = T),
       zip = {
         unzip(input$shape$datapath, exdir = 'files')
         st_read(dir('files/', pattern = '*.shp', full.names = T), quiet = T)
@@ -61,12 +63,27 @@ shinyServer(function(input, output) {
   })
   
   
+  ## DEM
+  
+  dem <- reactive({
+    
+    #get_elev_raster(locations = as(data(), 'Spatial'),
+    #                z = 9, clip = 'bbox', src = 'alos')
+  })
   
   
+  ## Calculando las pendientes
   
-  
-  
-  
+  observeEvent(input$var, {
+    
+    data() %>%
+      filter(id == as.integer(input$var)) %>% 
+      crop(x = rast(input$dem$datapath), y = .) %>%
+      terrain(v = 'slope', unit = 'degrees') * 100/360 %>% 
+      classify() %>%
+      print()
+    
+  })
   
   
   

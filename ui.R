@@ -19,7 +19,17 @@ shinyUI(fluidPage(
             sidebarPanel(width = 3,
               fileInput(inputId = 'shape', label = 'Shape de plantación:'),
               fileInput(inputId = 'file', label = 'Equipos disponibles:'),
-              div('', class = 'p-2'),
+              selectInput(inputId = 'deminfo', label = 'Forma de ingreso del DEM',
+                          choices = c(Descarga = 'descarga', Ingresar = 'ingresar')),
+              conditionalPanel(
+                condition = "input.deminfo == 'descarga'",
+                textInput(inputId = 'key', label = 'Api-Key de OpenTopography: '),
+                actionButton(inputId = 'descarga', label = 'Descargar DEM')
+              ),
+              conditionalPanel(
+                condition = "input.deminfo == 'ingresar'",
+                fileInput(inputId = 'dem', label = 'Modelo de elevación Digital:')
+              ),
               reactOutput('informacion')
             ),
     
@@ -32,11 +42,12 @@ shinyUI(fluidPage(
             )
         )
       ),
+      
       tabPanel(title = 'Cosecha por lotes',
                div('', class = "p-2"),
                sidebarLayout(
-                 sidebarPanel(
-                  uiOutput('lote')
+                 sidebarPanel(width = 3,
+                   uiOutput('lote')
                   ),
                  mainPanel()
                ),

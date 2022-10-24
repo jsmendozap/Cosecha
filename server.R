@@ -1,5 +1,5 @@
 pacman::p_load(tidyverse, readxl, leaflet, leaflet.extras, shiny, sf,
-               osmdata, magrittr, terra, units, geodata, elevatr, stars)
+               osmdata, magrittr, terra, units, geodata, elevatr, stars, tidyterra)
 
 shinyServer(function(input, output) {
   
@@ -47,7 +47,7 @@ shinyServer(function(input, output) {
   ## Mostrando tabla de equipos
   
   output$equipos <- renderDataTable(expr = equipos(),
-                                    options = list(searching = F))
+                                    options = list(searching = F, pageLength = 4))
   
   
   ## Seleccionando lote
@@ -58,6 +58,17 @@ shinyServer(function(input, output) {
     selectInput(inputId = 'var', label = 'Seleccione el lote a cosechar:',
                 choices = data()$id)
   })
+  
+  ## Información del dem
+  
+  output$elevacion <- renderPrint({
+    req(input$dem)
+    
+    rast(input$dem$datapath) %>%
+      rename(Elevacion = 1) %>%
+      summary(warn = F)
+  })
+  
   
   ## Calculando las pendientes
   

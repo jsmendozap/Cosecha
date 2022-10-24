@@ -52,40 +52,39 @@ shinyServer(function(input, output) {
   
   ## Seleccionando lote
   
-  id <- reactive({
-    req(input$shape)
-    data()$id
-  })
-  
   output$lote <- renderUI({
-    selectInput(inputId = 'var', label = 'Seleccione el lote a cosechar:',
-                choices = id())
-  })
-  
-  
-  ## DEM
-  
-  dem <- reactive({
+    req(input$shape)
     
-    #get_elev_raster(locations = as(data(), 'Spatial'),
-    #                z = 9, clip = 'bbox', src = 'alos')
+    selectInput(inputId = 'var', label = 'Seleccione el lote a cosechar:',
+                choices = data()$id)
   })
-  
   
   ## Calculando las pendientes
   
-  observeEvent(input$var, {
+  output$res <- renderPrint({
+    req(input$var)
+    req(input$file)
     
     data() %>%
       filter(id == as.integer(input$var)) %>% 
       crop(x = rast(input$dem$datapath), y = .) %>%
-      terrain(v = 'slope', unit = 'degrees') * 100/360 %>% 
-      classify() %>%
-      print()
+      terrain(v = 'slope', unit = 'degrees') * 100/360 -> slope
     
+    if(input$manual){
+      
+      min <- round(min(values(slope), na.rm = T))
+      max <- round(max(values(slope), na.rm = T))
+      
+      slope %>%
+        st_as_stars() %>%
+        st_contour(breaks = seq(min, max, length.out = input$breaks))
+      
+    } else {
+      slope %>%
+        st_as_stars() %>%
+        st_contour(breaks = c(0, sort(unique(equipos()$Pendiente))))
+    }
   })
-  
-  
   
   # Configurando panel
   

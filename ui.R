@@ -1,6 +1,7 @@
 library(shiny)
 library(shiny.fluent)
 library(leaflet)
+library(shinyWidgets)
 
 shinyUI(fluidPage(
     
@@ -20,7 +21,8 @@ shinyUI(fluidPage(
               fileInput(inputId = 'shape', label = 'Shape de plantación:'),
               fileInput(inputId = 'file', label = 'Equipos disponibles:'),
               selectInput(inputId = 'deminfo', label = 'Forma de ingreso del DEM',
-                          choices = c(Descarga = 'descarga', Ingresar = 'ingresar')),
+                          choices = c(Descarga = 'descarga', Archivo = 'ingresar'),
+                          selected = 'ingresar'),
               conditionalPanel(
                 condition = "input.deminfo == 'descarga'",
                 textInput(inputId = 'key', label = 'Api-Key de OpenTopography: '),
@@ -43,17 +45,18 @@ shinyUI(fluidPage(
         )
       ),
       
-      tabPanel(title = 'Cosecha por lotes',
+      tabPanel(title = 'Lotes',
                div('', class = "p-2"),
                sidebarLayout(
                  sidebarPanel(width = 3,
-                   uiOutput('lote')
+                   uiOutput('lote'),
+                   materialSwitch(inputId = 'manual', label = 'Intervalo manual', status = 'info'),
+                   conditionalPanel(condition = "input.manual == true",
+                                   sliderInput(inputId = 'breaks', label = 'Cantidad de contornos:',
+                                                min = 2, max = 10, value = 3, step = 1))
                   ),
-                 mainPanel()
-               ),
-               
-               
-               #actionButton('showPanel', label = 'Abrir panel')
-               )
+                 mainPanel(verbatimTextOutput(outputId = 'res'))
+              )
+          )
     )
 ))

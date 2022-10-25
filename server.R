@@ -47,7 +47,7 @@ shinyServer(function(input, output) {
   ## Mostrando tabla de equipos
   
   output$equipos <- renderDataTable(expr = equipos(),
-                                    options = list(searching = F, pageLength = 4))
+                                    options = list(searching = F, pageLength = 3))
   
   
   ## Seleccionando lote

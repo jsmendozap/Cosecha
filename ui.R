@@ -1,5 +1,14 @@
 pacman::p_load(shiny, shiny.fluent, leaflet, shinyWidgets, bslib, plotly)
 
+bs4_card <- function(body, title, style = "") {
+  div(class="table-responsive",
+      class = "card",
+      div(class = "card-header bg-primary d-flex justify-content-center", title),
+      div(class = "card-body d-flex justify-content-center", body,
+          style = style)
+  )
+}
+
 info <- nav(title = 'Información', 
             sidebarLayout(
               sidebarPanel(width = 3,
@@ -21,10 +30,13 @@ info <- nav(title = 'Información',
               ), # Cierre sidebar
               mainPanel(width = 9,
                         fluidRow(
-                          column(6, leafletOutput(outputId = 'mapa', height = '83vh')),
-                          column(6, dataTableOutput('equipos'),
+                          column(6, bs4_card(leafletOutput(outputId = 'mapa', height = '77vh'),
+                                             title = 'Ubicación de la plantación', style = "padding: 1px")),
+                          column(6, bs4_card(dataTableOutput('equipos'), 'Resumen equipos'),
                                     br(),
-                                    column(6, verbatimTextOutput('elevacion')))
+                                    column(6, bs4_card(verbatimTextOutput('elevacion'),
+                                                       title = 'Elevación del terreno',
+                                                       style = 'padding: 3px')))
                         )
               ) # Cierre panel principal
             ) # Cierre layout
@@ -44,14 +56,15 @@ lote <- nav(title = 'Lote',
                                         plotlyOutput(outputId = 'plot', height = '75vh')),
                                  column(width = 4,
                                         br(), br(), br(),
-                                        tableOutput(outputId = 'res'))
+                                        bs4_card(tableOutput(outputId = 'res'), 
+                                                 'Área plantada por pendiente'))
                                  )
                         )
             ) # Cierre Layout
 )
 
 creditos <- nav_item(div(actionButton(inputId = 'creditos', label = 'Créditos', 
-                                     style = "background-color: #20124D; border-color: #20124D"),
+                                     style = "background-color: #2c3e50; border-color: #2c3e50"),
                          tags$a(icon("github", "fa-2x"), href='https://github.com/jsmendozap/Cosecha', target = "_blank")),
                      style = 'display: flex', 
                      reactOutput('modal'))
@@ -61,7 +74,7 @@ shinyUI(
     title = div(icon(name = "fa-light fa-tree", lib = "font-awesome",
                      verify_fa = F), "Cosecha Forestal",
                 style = "font-size: 25px; font-weight: bolder"),
-    bg = '#20124D',
+    bg = '#2c3e50',
     !!!list(info, lote, nav_spacer(), creditos),
     header = tags$style(".navbar-header {display: flex}"),
     theme = bs_theme(bootswatch = "flatly")

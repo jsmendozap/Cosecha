@@ -1,5 +1,5 @@
 pacman::p_load(tidyverse, readxl, leaflet, leaflet.extras, shiny, sf,
-               osmdata, magrittr, terra, units, geodata, elevatr, stars, tidyterra)
+               osmdata, terra, units, elevatr, stars, tidyterra, plotly)
 
 shinyServer(function(input, output) {
   
@@ -72,48 +72,75 @@ shinyServer(function(input, output) {
   
   ## Calculando las pendientes
   
-  output$res <- renderPrint({
+  contorno <- reactive({
     req(input$var)
     req(input$file)
     
     data() %>%
-      filter(id == as.integer(input$var)) %>% 
-      crop(x = rast(input$dem$datapath), y = .) %>%
+      filter(id == as.integer(input$var)) -> seleccion
+    
+    crop(x = rast(input$dem$datapath), y = seleccion) %>%
+      mask(mask = seleccion, touches = T) %>%
       terrain(v = 'slope', unit = 'degrees') * 100/360 -> slope
     
     if(input$manual){
       
-      min <- round(min(values(slope), na.rm = T))
-      max <- round(max(values(slope), na.rm = T))
+      min <- floor(min(values(slope), na.rm = T))
+      max <- ceiling(max(values(slope), na.rm = T))
       
-      slope %>%
+      contorno <- slope %>%
         st_as_stars() %>%
         st_contour(breaks = seq(min, max, length.out = input$breaks))
       
     } else {
-      slope %>%
+      contorno <- slope %>%
         st_as_stars() %>%
-        st_contour(breaks = c(0, sort(unique(equipos()$Pendiente))))
+        st_contour(breaks = c(0, sort(unique(equipos()$Pendiente)))) 
     }
   })
   
-  # Configurando panel
-  
-  isPanelOpen <- reactiveVal(FALSE)
-  
-  observeEvent(input$mapa_shape_click, { 
-    print(input$mapa_shape_click)
-    #isPanelOpen(TRUE)
+  output$res <- renderTable({
+    req(input$var)
+    
+    contorno() %>%
+      select(1) %>%
+      mutate('Area (ha)'= st_area(.) %>% set_units('ha') %>% round(3)) %>%
+      st_drop_geometry() %>%
+      rename('Pendiente (%)' = 1)
   })
   
-  observeEvent(input$hidePanel, isPanelOpen(FALSE))
-  
-  output$informacion <- renderReact({
-    Panel(
-      headerText = "Información del lote", 
-      isOpen = isPanelOpen(),
-      "", type = 1,
-      onDismiss = JS("() => { Shiny.setInputValue('hidePanel', Math.random()); }")
-    )
+  output$plot <- renderPlotly({
+    req(input$dem)
+    
+    plot <- ggplot(contorno())+
+              geom_sf(data = data() %>% filter(id == input$var), fill = "white")+
+              geom_sf(aes(fill = slope))+
+              scale_fill_viridis_d()+
+              labs(fill = 'Pendiente (%)')+
+              theme_light()+
+              theme(axis.text = element_blank(), 
+                    axis.ticks = element_blank(),
+                    panel.grid = element_blank())
+    
+    ggplotly(plot)
   })
+  
+  modalVisible <- reactiveVal(F)
+  observeEvent(input$creditos, modalVisible(T))
+  observeEvent(input$hideModal, modalVisible(F))
+  
+  output$modal <- renderReact({
+    Modal(isOpen = modalVisible(),
+          Stack(tokens = list(padding = "15px"),
+                div(
+                  p(strong("Desarrollador"), style = "font-size: 30px"),
+                  p("Juan Sebastián Mendoza Páez", style = "margin-bottom: 0px"),
+                  p("Estudiante Ingenieria Forestal", style = "margin-bottom: 0px"),
+                  p("PAE - Planificación Forestal", style = "margin-bottom: 0px"),
+                  p("Universidad Nacional de Colombia Sede Medellín", style = "margin-bottom: 0px"),
+                  style = "display: flex; align-items: center; flex-direction: column; font-size: 15px")
+                ),
+    onDismiss = JS("() => { Shiny.setInputValue('hideModal', Math.random()); }"))
+  })
+  
 })

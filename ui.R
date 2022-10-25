@@ -1,9 +1,4 @@
-library(shiny)
-library(shiny.fluent)
-library(leaflet)
-library(shinyWidgets)
-library(bslib)
-library(plotly)
+pacman::p_load(shiny, shiny.fluent, leaflet, shinyWidgets, bslib, plotly)
 
 info <- nav(title = 'Información', 
             sidebarLayout(
@@ -26,7 +21,7 @@ info <- nav(title = 'Información',
               ), # Cierre sidebar
               mainPanel(width = 9,
                         fluidRow(
-                          column(6, leafletOutput(outputId = 'mapa', height = 500)),
+                          column(6, leafletOutput(outputId = 'mapa', height = '83vh')),
                           column(6, dataTableOutput('equipos'),
                                     br(),
                                     column(6, verbatimTextOutput('elevacion')))
@@ -46,7 +41,7 @@ lote <- nav(title = 'Lote',
               ), # Cierre sidebar
               mainPanel(fluidRow(column(width = 8,
                                         h3('Identificación de pendientes por lote'),
-                                        plotlyOutput(outputId = 'plot')),
+                                        plotlyOutput(outputId = 'plot', height = '75vh')),
                                  column(width = 4,
                                         br(), br(), br(),
                                         tableOutput(outputId = 'res'))

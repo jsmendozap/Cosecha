@@ -125,22 +125,38 @@ shinyServer(function(input, output) {
     ggplotly(plot)
   })
   
-  modalVisible <- reactiveVal(F)
-  observeEvent(input$creditos, modalVisible(T))
-  observeEvent(input$hideModal, modalVisible(F))
+  isDialogOpen <- reactiveVal(F)
+  observeEvent(input$creditos, isDialogOpen(T))
+  observeEvent(input$hideDialog, isDialogOpen(F))
+  observeEvent(input$dialogSend, isDialogOpen(F))
   
   output$modal <- renderReact({
-    Modal(isOpen = modalVisible(),
-          Stack(tokens = list(padding = "15px"),
-                div(
-                  p(strong("Desarrollador"), style = "font-size: 30px"),
-                  p("Juan Sebastián Mendoza Páez", style = "margin-bottom: 0px"),
-                  p("Estudiante Ingenieria Forestal", style = "margin-bottom: 0px"),
-                  p("PAE - Planificación Forestal", style = "margin-bottom: 0px"),
-                  p("Universidad Nacional de Colombia Sede Medellín", style = "margin-bottom: 0px"),
-                  style = "display: flex; align-items: center; flex-direction: column; font-size: 15px")
-                ),
-    onDismiss = JS("() => { Shiny.setInputValue('hideModal', Math.random()); }"))
+    
+    cuerpo <- div(
+                 p("Juan Sebastián Mendoza Páez", style = "margin-bottom: 0px"),
+                 p("Estudiante Ingenieria Forestal", style = "margin-bottom: 0px"),
+                 p("PAE - Planificación Forestal", style = "margin-bottom: 0px"),
+                 p("Universidad Nacional de Colombia", style = "margin-bottom: 0px"),
+                 p(" Sede Medellín", stle = "margin-bottom: 0px"),
+                 style = "display: flex; align-items: center; flex-direction: column; font-size: 15px")
+    
+    dialogContentProps <- list(
+      type = 1,
+      title = div('Desarrollador', style = 'display: flex; justify-content: center; color: #20124D'),
+      closeButtonAriaLabel = 'Close',
+      subText = cuerpo
+    )
+    
+    Dialog(
+      hidden = !isDialogOpen(),
+      onDismiss = JS("() => { Shiny.setInputValue('hideDialog', Math.random()); }"),
+      dialogContentProps = dialogContentProps,
+      modalProps = list(),
+      DialogFooter(
+        PrimaryButton.shinyInput('dialogSend', text = 'Ok')
+      )
+    )
+    
   })
   
 })

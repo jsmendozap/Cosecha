@@ -81,7 +81,7 @@ shinyServer(function(input, output) {
     
     crop(x = rast(input$dem$datapath), y = seleccion) %>%
       mask(mask = seleccion, touches = T) %>%
-      terrain(v = 'slope', unit = 'degrees') * 100/360 -> slope
+      terrain(v = 'slope', unit = 'degrees') * 1.75 -> slope
     
     if(input$manual){
       

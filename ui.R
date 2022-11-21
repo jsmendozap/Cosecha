@@ -51,7 +51,9 @@ lote <- nav(title = 'Lote',
                                             sliderInput(inputId = 'breaks', label = 'Cantidad de contornos:',
                                                         min = 2, max = 10, value = 3, step = 1)),
                            numericInput(inputId = 'pendiente', label = 'Máxima pendiente', value = 15,
-                                        min = 1, max = 30)
+                                        min = 1, max = 30),
+                           numericInput(inputId = 'vias', label = 'Radio de búsqueda de vías (Km)', value = 1,
+                                        min = 0, max = 10)
               ), # Cierre sidebar
               mainPanel(fluidRow(column(width = 8,
                                         h3('Identificación de pendientes por lote'),

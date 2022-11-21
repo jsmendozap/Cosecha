@@ -1,4 +1,4 @@
-pacman::p_load(tidyverse, readxl, leaflet, leaflet.extras, shiny, sf, 
+pacman::p_load(tidyverse, readxl, leaflet, leaflet.extras, shiny, sf, osmdata,
                osmdata, terra, units, elevatr, stars, tidyterra, plotly)
 
 shinyServer(function(input, output) {
@@ -69,7 +69,6 @@ shinyServer(function(input, output) {
       summary(warn = F)
   })
   
-  
   ## Calculando las pendientes
   
   slope <- reactive({
@@ -132,6 +131,17 @@ shinyServer(function(input, output) {
   output$patios <- renderPrint({
     req(input$pendiente)
     
+    tryCatch(expr = {
+      
+      vias <- data() %>%
+        st_buffer(dist = input$vias * 1000) %>%
+        {opq(bbox = st_bbox(.), timeout = 5)} %>%
+        add_osm_feature(key = "highway") %>%
+        osmdata_sf() %>%
+        pluck('osm_lines') %>%
+        pull(geometry) %>%
+        st_sfc(crs = 4326)  
+      
       slope() %>%
         st_as_stars() %>%
         st_contour(breaks = c(0, input$pendiente)) %>%
@@ -140,11 +150,15 @@ shinyServer(function(input, output) {
         mutate(Area = st_area(.) %>% set_units('ha') %>% round(3)) %>%
         st_centroid() %>%
         mutate(Latitud = st_coordinates(.)[,2],
-               Longitud  = st_coordinates(.)[,1]) %>%
-        select(Latitud, Longitud, Area) %>%
+               Longitud  = st_coordinates(.)[,1],
+               Vias = st_distance(x = ., y = vias) %>%
+                 set_units('km') %>% round(2) %>%
+                 apply(MARGIN = 1, FUN = min)) %>%
+        select(Latitud, Longitud, Area, Vias) %>%
         st_drop_geometry() %>%
-        remove_rownames()
-      
+        remove_rownames() %>%
+        print()  
+    }, error = \(x) cat('No se encuentran vías cercanas, \npor favor incremente el radio de búsqueda'))
   })
   
   isDialogOpen <- reactiveVal(F)

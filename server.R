@@ -72,9 +72,8 @@ shinyServer(function(input, output) {
   
   ## Calculando las pendientes
   
-  contorno <- reactive({
+  slope <- reactive({
     req(input$var)
-    req(input$file)
     
     data() %>%
       filter(id == as.integer(input$var)) -> seleccion
@@ -82,19 +81,23 @@ shinyServer(function(input, output) {
     crop(x = rast(input$dem$datapath), y = seleccion) %>%
       mask(mask = seleccion, touches = T) %>%
       terrain(v = 'slope', unit = 'radians') %>%
-      tan() *100 -> slope
+      tan() *100
+  })
+  
+  contorno <- reactive({
+    req(input$file)
     
     if(input$manual){
       
-      min <- floor(min(values(slope), na.rm = T))
-      max <- ceiling(max(values(slope), na.rm = T))
+      min <- floor(min(values(slope()), na.rm = T))
+      max <- ceiling(max(values(slope()), na.rm = T))
       
-      contorno <- slope %>%
+      contorno <- slope() %>%
         st_as_stars() %>%
         st_contour(breaks = seq(min, max, length.out = input$breaks))
       
     } else {
-      contorno <- slope %>%
+      contorno <- slope() %>%
         st_as_stars() %>%
         st_contour(breaks = c(0, sort(unique(equipos()$Pendiente)))) 
     }
@@ -124,6 +127,26 @@ shinyServer(function(input, output) {
                     panel.grid = element_blank())
     
     ggplotly(plot)
+  })
+  
+  output$patios <- renderPrint({
+    req(input$pendiente)
+    
+    tryCatch(expr = {
+      slope() %>%
+        st_as_stars() %>%
+        st_contour(breaks = c(0, input$pendiente)) %>%
+        filter(Max == input$pendiente) %>%
+        st_cast(to = 'POLYGON') %>%
+        mutate(Area = st_area(.) %>% set_units('ha') %>% round(3)) %>%
+        st_centroid() %>%
+        mutate(Latitud = st_coordinates(.)[,2],
+               Longitud  = st_coordinates(.)[,1]) %>%
+        select(Latitud, Longitud, Area) %>%
+        st_drop_geometry() %>%
+        remove_rownames() %>%
+        print()  
+    }, error = \(x) cat('No existen pendientes del ', input$pendiente, '% en el lote', sep = ''))
   })
   
   isDialogOpen <- reactiveVal(F)

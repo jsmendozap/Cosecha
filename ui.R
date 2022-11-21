@@ -36,7 +36,7 @@ info <- nav(title = 'Información',
                                     br(),
                                     column(6, bs4_card(verbatimTextOutput('elevacion'),
                                                        title = 'Elevación del terreno',
-                                                       style = 'padding: 3px')))
+                                                       style = 'padding: 3px; margin-top: 3px')))
                         )
               ) # Cierre panel principal
             ) # Cierre layout
@@ -49,7 +49,9 @@ lote <- nav(title = 'Lote',
                            materialSwitch(inputId = 'manual', label = 'Intervalo manual', status = 'info'),
                            conditionalPanel(condition = "input.manual == true",
                                             sliderInput(inputId = 'breaks', label = 'Cantidad de contornos:',
-                                                        min = 2, max = 10, value = 3, step = 1))
+                                                        min = 2, max = 10, value = 3, step = 1)),
+                           numericInput(inputId = 'pendiente', label = 'Máxima pendiente', value = 15,
+                                        min = 1, max = 30)
               ), # Cierre sidebar
               mainPanel(fluidRow(column(width = 8,
                                         h3('Identificación de pendientes por lote'),
@@ -57,7 +59,10 @@ lote <- nav(title = 'Lote',
                                  column(width = 4,
                                         br(), br(), br(),
                                         bs4_card(tableOutput(outputId = 'res'), 
-                                                 'Área plantada por pendiente'))
+                                                 'Área plantada por pendiente'),
+                                        br(),
+                                        bs4_card(verbatimTextOutput(outputId = 'patios'),
+                                                 'Localización patios de cosecha'))
                                  )
                         )
             ) # Cierre Layout

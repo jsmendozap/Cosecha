@@ -1,4 +1,4 @@
-pacman::p_load(tidyverse, readxl, leaflet, leaflet.extras, shiny, sf,
+pacman::p_load(tidyverse, readxl, leaflet, leaflet.extras, shiny, sf, 
                osmdata, terra, units, elevatr, stars, tidyterra, plotly)
 
 shinyServer(function(input, output) {
@@ -132,7 +132,6 @@ shinyServer(function(input, output) {
   output$patios <- renderPrint({
     req(input$pendiente)
     
-    tryCatch(expr = {
       slope() %>%
         st_as_stars() %>%
         st_contour(breaks = c(0, input$pendiente)) %>%
@@ -144,9 +143,8 @@ shinyServer(function(input, output) {
                Longitud  = st_coordinates(.)[,1]) %>%
         select(Latitud, Longitud, Area) %>%
         st_drop_geometry() %>%
-        remove_rownames() %>%
-        print()  
-    }, error = \(x) cat('No existen pendientes del ', input$pendiente, '% en el lote', sep = ''))
+        remove_rownames()
+      
   })
   
   isDialogOpen <- reactiveVal(F)

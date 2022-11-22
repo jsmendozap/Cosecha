@@ -1,5 +1,5 @@
 pacman::p_load(tidyverse, readxl, leaflet, leaflet.extras, shiny, sf, osmdata,
-               osmdata, terra, units, elevatr, stars, tidyterra, plotly)
+               osmdata, terra, units, elevatr, stars, tidyterra, plotly, magrittr)
 
 shinyServer(function(input, output) {
   
@@ -71,20 +71,24 @@ shinyServer(function(input, output) {
   
   ## Calculando las pendientes
   
-  slope <- reactive({
+  seleccion <- reactive({
     req(input$var)
     
     data() %>%
-      filter(id == as.integer(input$var)) -> seleccion
+      filter(id == as.integer(input$var))
+  })
+  
+  slope <- reactive({
+    req(input$var)
     
-    crop(x = rast(input$dem$datapath), y = seleccion) %>%
-      mask(mask = seleccion, touches = T) %>%
+    rast(input$dem$datapath) %>%
+      crop(y = seleccion(), snap = 'out') %>%
       terrain(v = 'slope', unit = 'radians') %>%
       tan() *100
   })
   
   contorno <- reactive({
-    req(input$file)
+    req(input$file, input$var)
     
     if(input$manual){
       
@@ -98,8 +102,13 @@ shinyServer(function(input, output) {
     } else {
       contorno <- slope() %>%
         st_as_stars() %>%
-        st_contour(breaks = c(0, sort(unique(equipos()$Pendiente)))) 
+        st_contour(breaks = c(0, sort(unique(equipos()$Pendiente))))
+        
     }
+    
+    contorno %>%
+      st_intersection(seleccion()) %>%
+      st_simplify()
   })
   
   output$res <- renderTable({
@@ -113,10 +122,10 @@ shinyServer(function(input, output) {
   })
   
   output$plot <- renderPlotly({
-    req(input$dem)
+    req(input$dem, input$var)
     
     plot <- ggplot(contorno())+
-              geom_sf(data = data() %>% filter(id == input$var), fill = "white")+
+              geom_sf(data = seleccion(), fill = "white")+
               geom_sf(aes(fill = slope))+
               scale_fill_viridis_d()+
               labs(fill = 'Pendiente (%)')+
@@ -129,7 +138,7 @@ shinyServer(function(input, output) {
   })
   
   output$patios <- renderPrint({
-    req(input$pendiente)
+    req(input$pendiente, input$var)
     
     tryCatch(expr = {
       
@@ -141,10 +150,11 @@ shinyServer(function(input, output) {
         pluck('osm_lines') %>%
         pull(geometry) %>%
         st_sfc(crs = 4326)  
-      
+    
       slope() %>%
         st_as_stars() %>%
         st_contour(breaks = c(0, input$pendiente)) %>%
+        st_intersection(y = seleccion()) %>%
         filter(Max == input$pendiente) %>%
         st_cast(to = 'POLYGON') %>%
         mutate(Area = st_area(.) %>% set_units('ha') %>% round(3)) %>%
@@ -156,9 +166,8 @@ shinyServer(function(input, output) {
                  apply(MARGIN = 1, FUN = min)) %>%
         select(Latitud, Longitud, Area, Vias) %>%
         st_drop_geometry() %>%
-        remove_rownames() %>%
-        print()  
-    }, error = \(x) cat('No se encuentran vías cercanas, \npor favor incremente el radio de búsqueda'))
+        remove_rownames() 
+    }, error = \(x) cat('No se encuentran vías cercanas. \nPor favor incremente el radio de búsqueda'))
   })
   
   isDialogOpen <- reactiveVal(F)

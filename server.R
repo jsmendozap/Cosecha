@@ -89,26 +89,31 @@ shinyServer(function(input, output) {
   
   contorno <- reactive({
     req(input$file, input$var)
-    
-    if(input$manual){
       
       min <- floor(min(values(slope()), na.rm = T))
       max <- ceiling(max(values(slope()), na.rm = T))
+    
+    if(input$manual){
       
       contorno <- slope() %>%
         st_as_stars() %>%
         st_contour(breaks = seq(min, max, length.out = input$breaks))
       
     } else {
+      
+      breaks <- sort(unique(equipos()$Pendiente))
+      breaks[length(breaks)] <- max
+      
       contorno <- slope() %>%
         st_as_stars() %>%
-        st_contour(breaks = c(0, sort(unique(equipos()$Pendiente))))
+        st_contour(breaks = c(0, breaks))
         
     }
     
     contorno %>%
       st_intersection(seleccion()) %>%
-      st_simplify()
+      st_simplify() %>%
+      mutate(id = row_number())
   })
   
   output$res <- renderTable({
@@ -124,7 +129,7 @@ shinyServer(function(input, output) {
   output$plot <- renderPlotly({
     req(input$dem, input$var)
     
-    plot <- ggplot(contorno())+
+    plot <- ggplot(contorno(), aes(text = str_glue("Grupo: {id}")))+
               geom_sf(data = seleccion(), fill = "white")+
               geom_sf(aes(fill = slope))+
               scale_fill_viridis_d()+
@@ -168,6 +173,25 @@ shinyServer(function(input, output) {
         st_drop_geometry() %>%
         remove_rownames() 
     }, error = \(x) cat('No se encuentran vías cercanas. \nPor favor incremente el radio de búsqueda'))
+  })
+  
+  output$optimos <- renderDataTable({
+    
+    clasificacion <- function(valor, intervalo) {
+      valores <- as.character(intervalo) %>%
+        str_split(pattern = ',', simplify = T) 
+      min <- substring(text = valores[1], first = 2,
+                       last = nchar(valores[1])) %>% as.numeric()
+      max <- substring(text = valores[2], first = 1,
+                       last = nchar(valores[2]) - 1) %>% as.numeric()
+      between(x = valor, left = min, right = max)
+    }
+    
+    equipos() %>%
+      mutate(Grupo = map_int(.x = Pendiente,
+                             .f = \(x) detect_index(.x = contorno() %>% pull(slope),
+                                                    .f = \(y) clasificacion(valor = x, intervalo = y)))) %>%
+      select(Equipo, Grupo)
   })
   
   isDialogOpen <- reactiveVal(F)

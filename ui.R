@@ -64,7 +64,10 @@ lote <- nav(title = 'Lote',
                                                  'Área plantada por pendiente'),
                                         br(),
                                         bs4_card(verbatimTextOutput(outputId = 'patios'),
-                                                 'Localización patios de cosecha'))
+                                                 'Localización patios de cosecha'),
+                                        br(),
+                                        bs4_card(dataTableOutput(outputId = 'optimos'),
+                                                 'Equipos óptimos'))
                                  )
                         )
             ) # Cierre Layout

@@ -1,4 +1,4 @@
-pacman::p_load(shiny, shiny.fluent, leaflet, shinyWidgets, bslib, plotly)
+pacman::p_load(shiny, shiny.fluent, leaflet, shinyWidgets, bslib, plotly, shiny.mui)
 
 bs4_card <- function(body, title, style = "") {
   div(class="table-responsive",
@@ -7,6 +7,26 @@ bs4_card <- function(body, title, style = "") {
       div(class = "card-body d-flex justify-content-center", body,
           style = style)
   )
+}
+
+card <- function(body, style = "") {
+  div(class="table-responsive",
+      class = "card",
+      div(class = "card-body d-flex justify-content-center", body,
+          style = style)
+  )
+}
+
+acordeon <- function(resumen, detalles){
+  Accordion(
+    AccordionSummary(expandIcon = icon(name = "fa-light fa-tree",
+                                       lib = "font-awesome",
+                                       style = 'color: #6F7378',
+                                       verify_fa = F),
+                     Typography(resumen, style = 'font-weight: bold')),
+    AccordionDetails(
+      Typography(detalles)
+    ))
 }
 
 info <- nav(title = 'Información', 
@@ -32,7 +52,7 @@ info <- nav(title = 'Información',
                         fluidRow(
                           column(6, bs4_card(leafletOutput(outputId = 'mapa', height = '77vh'),
                                              title = 'Ubicación de la plantación', style = "padding: 1px")),
-                          column(6, bs4_card(dataTableOutput('equipos'), 'Resumen equipos'),
+                          column(5, bs4_card(dataTableOutput('equipos'), 'Resumen equipos'),
                                     br(),
                                     column(6, bs4_card(verbatimTextOutput('elevacion'),
                                                        title = 'Elevación del terreno',
@@ -55,19 +75,20 @@ lote <- nav(title = 'Lote',
                            numericInput(inputId = 'vias', label = 'Radio de búsqueda de vías (Km)', value = 1,
                                         min = 0, max = 10)
               ), # Cierre sidebar
-              mainPanel(fluidRow(column(width = 8,
-                                        h3('Identificación de pendientes por lote'),
+              mainPanel(width = 9, fluidRow(column(width = 6, style = 'display: flex; align-items: center; flex-direction: column',
+                                        h3('Información por lote', style = 'font-weight: bold'),
                                         plotlyOutput(outputId = 'plot', height = '75vh')),
-                                 column(width = 4,
+                                 column(width = 6,
                                         br(), br(), br(),
-                                        bs4_card(tableOutput(outputId = 'res'), 
-                                                 'Área plantada por pendiente'),
+                                        acordeon(resumen = "Área plantada por pendiente",
+                                                 detalles = card(tableOutput(outputId = 'res'))),
                                         br(),
-                                        bs4_card(verbatimTextOutput(outputId = 'patios'),
-                                                 'Localización patios de cosecha'),
+                                        acordeon(resumen = 'Patios de cosecha',
+                                                 detalles = card(verbatimTextOutput(outputId = 'patios'))),
                                         br(),
-                                        bs4_card(dataTableOutput(outputId = 'optimos'),
-                                                 'Equipos óptimos'))
+                                        acordeon(resumen = 'Equipos óptimos',
+                                                 detalles = card(dataTableOutput(outputId = 'optimos')))
+                                        )
                                  )
                         )
             ) # Cierre Layout
